@@ -1,0 +1,257 @@
+esphome:
+  name: stiebel-eltron
+  friendly_name: Stiebel Eltron
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+logger:
+  logs:
+    wifi: WARN
+    esp32.preferences: WARN
+    WiFiGeneric.cpp: WARN
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_key
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "Stiebel-Eltron Fallback Hotspot"
+    password: !secret fallback_wifi_password
+
+captive_portal:
+
+web_server:
+  port: 80
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components:
+      - stiebel_eltron_can
+
+status_led:
+  pin:
+    number: GPIO08
+
+canbus:
+  - platform: esp32_can
+    id: can_bus
+    rx_pin: GPIO00
+    tx_pin: GPIO01
+    can_id: 0x680
+    bit_rate: 50kbps
+    rx_queue_len: 16
+    tx_queue_len: 16
+
+stiebel_eltron_can:
+  id: stiebel_eltron_component
+  canbus_id: can_bus
+
+sensor:
+  - platform: stiebel_eltron_can
+    name: "Speichertemperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x000e
+    elster_type: dec
+    target: KESSEL
+
+  - platform: stiebel_eltron_can
+    name: "Aussentemperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x000c
+    elster_type: dec
+    target: KESSEL
+
+  - platform: stiebel_eltron_can
+    name: "Raumtemperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x4ec7
+    elster_type: dec
+    target: HK1
+
+  - platform: stiebel_eltron_can
+    name: "Raumluftfeuchte"
+    unit_of_measurement: "%"
+    device_class: "moisture"
+    elster_index: 0x4ec8
+    elster_type: dec
+    target: HK1
+
+  - platform: stiebel_eltron_can
+    name: "Verdichter Starts"
+    icon: "mdi:counter"
+    state_class: total_increasing
+    elster_index: 0x4ef0
+    elster_type: inv_double
+    target: MANAGER
+    update_interval: 1h
+
+  - platform: stiebel_eltron_can
+    name: "Wärmeertrag WW"
+    icon: "mdi:counter"
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    elster_index: 0x092c
+    elster_type: double
+    target: MANAGER
+    update_interval: 1h
+
+  - platform: stiebel_eltron_can
+    name: "Wärmeertrag Heizung"
+    icon: "mdi:counter"
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    elster_index: 0x0930
+    elster_type: double
+    target: MANAGER
+    update_interval: 1h
+
+  - platform: stiebel_eltron_can
+    name: "Leistungsaufnahme Heizung"
+    icon: "mdi:counter"
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    elster_index: 0x0920
+    elster_type: double
+    target: MANAGER
+    update_interval: 1h
+
+  - platform: stiebel_eltron_can
+    name: "Leistungsaufnahme WW"
+    icon: "mdi:counter"
+    unit_of_measurement: "kWh"
+    device_class: energy
+    state_class: total_increasing
+    elster_index: 0x091c
+    elster_type: double
+    target: MANAGER
+    update_interval: 1h
+
+number:
+  - platform: stiebel_eltron_can
+    name: "HK1 Komfort Temperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x4eb8
+    elster_type: dec
+    target: HK1
+    min_value: 5
+    max_value: 30
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    name: "HK1 Eco Temperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x4eb9
+    elster_type: dec
+    target: HK1
+    min_value: 5
+    max_value: 30
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    name: "KH1 Kühl Temperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x4f04
+    elster_type: dec
+    target: HK1
+    min_value: 20
+    max_value: 30
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    name: "WW Komfort Temperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x0013
+    elster_type: dec
+    target: WWTEMP
+    min_value: 10
+    max_value: 60
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    name: "WW Eco Temperatur"
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    elster_index: 0x0a06
+    elster_type: dec
+    target: WWTEMP
+    min_value: 10
+    max_value: 60
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    name: "WW Hysterese"
+    unit_of_measurement: "K"
+    device_class: "temperature"
+    elster_index: 0x4f25
+    elster_type: dec
+    target: KESSEL
+    min_value: 1
+    max_value: 15
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
+    id: betriebsprogramm_raw
+    internal: true
+    elster_index: 0x4f1b
+    target: WPM
+    min_value: 0
+    max_value: 5
+    update_interval: 5min
+    on_value:
+      then:
+        - lambda: |-
+            auto index = (int)x;
+            auto opt = id(betriebsprogramm).at(index);
+            if (opt.has_value()) {
+              id(betriebsprogramm).publish_state(opt.value());
+            } else {
+              id(betriebsprogramm).publish_state("");
+            }
+
+select:
+  - platform: template
+    name: "Betriebsprogramm"
+    id: betriebsprogramm
+    icon: "mdi:heat-wave"
+    options:
+      - "Notbetrieb"
+      - "Bereitschaft"
+      - "Programm"
+      - "Komfort"
+      - "Eco"
+      - "Warmwasser"
+      - ""
+    initial_option: ""
+    set_action:
+      then:
+        - lambda: |-
+            if (x == "") {
+              return;
+            }
+            auto index = id(betriebsprogramm).index_of(x);
+            if (index.has_value()) {
+              id(betriebsprogramm_raw).control(index.value());
+            }
