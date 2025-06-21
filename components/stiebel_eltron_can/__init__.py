@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
-from esphome.components import canbus
+from esphome.components import canbus, light
 
 DEPENDENCIES = ['canbus']
 CODEOWNERS = ['@ncam427']
@@ -36,6 +36,7 @@ StiebelEltronCanComponent = stiebel_eltron_can_ns.class_('StiebelEltronCanCompon
 CONFIG_SCHEMA = cv.Schema({
     cv.GenerateID(): cv.declare_id(StiebelEltronCanComponent),
     cv.Required('canbus_id'): cv.use_id(canbus.CanbusComponent),
+    cv.Optional('status_led'): cv.use_id(light.LightState)
 }).extend(cv.COMPONENT_SCHEMA)
 
 async def to_code(config):
@@ -44,3 +45,7 @@ async def to_code(config):
 
     canbus_var = await cg.get_variable(config['canbus_id'])
     cg.add(var.set_canbus(canbus_var))
+
+    if 'status_led' in config:
+        status_led_var = await cg.get_variable(config['status_led'])
+        cg.add(var.set_status_led(status_led_var))

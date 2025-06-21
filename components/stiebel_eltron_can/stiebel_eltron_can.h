@@ -12,6 +12,11 @@
 #include "type.h"
 #include "can_member.h"
 
+#if __has_include("esphome/components/light/light_state.h")
+  #include "esphome/components/light/light_state.h"
+  #define _SE_USE_STATUS_LED
+#endif
+
 namespace esphome {
 namespace stiebel_eltron_can {
 
@@ -25,6 +30,9 @@ class StiebelEltronCanComponent : public Component {
   void dump_config() override;
 
   void set_canbus(canbus::Canbus *canbus) { this->canbus_ = canbus; }
+#ifdef _SE_USE_STATUS_LED
+  void set_status_led(light::LightState *light) { this->status_led_ = light; }
+#endif
   void register_sensor(StiebelEltronCanSensor *sensor);
   void register_number(StiebelEltronCanNumber *number);
 
@@ -36,10 +44,15 @@ class StiebelEltronCanComponent : public Component {
   std::vector<StiebelEltronCanSensor*> sensors_;
   std::vector<StiebelEltronCanNumber*> numbers_;
 
+#ifdef _SE_USE_STATUS_LED
+  light::LightState *status_led_;
+#endif
+
   CanMember sender_ = can_members::ESPClient;
   std::list<CanFrame> send_queue;
 
   void process_can_message(uint32_t can_id, const std::vector<uint8_t> &data);
+  void blink_status_led();
 };
 
 uint16_t encode_elster_data(Type type, float value);

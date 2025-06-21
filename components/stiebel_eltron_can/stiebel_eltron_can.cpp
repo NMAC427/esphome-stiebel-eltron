@@ -23,6 +23,7 @@ void StiebelEltronCanComponent::setup() {
   this->canbus_->add_callback(
     [this](uint32_t can_id, bool extended_id, bool remote_transmission_request, const std::vector<uint8_t> &data) {
       this->process_can_message(can_id, data);
+      this->blink_status_led();
     }
   );
 
@@ -87,6 +88,7 @@ void StiebelEltronCanComponent::request_elster_value(uint16_t elster_index, CanM
   if (immediately) {
     log_can_message(frame);
     frame.send(this->canbus_);
+    this->blink_status_led();
   } else {
     send_queue.emplace_back(frame);
   }
@@ -102,6 +104,19 @@ void StiebelEltronCanComponent::set_elster_value(float value, uint16_t elster_in
 
   log_can_message(frame);
   frame.send(this->canbus_);
+  this->blink_status_led();
+}
+
+void StiebelEltronCanComponent::blink_status_led() {
+#ifdef _SE_USE_STATUS_LED
+  auto led = this->status_led_;
+  if (!led) return;
+
+  led->turn_on().perform();
+  this->defer("status_led_off", [led](){
+    led->turn_off().perform();
+  });
+#endif
 }
 
 uint16_t encode_elster_data(Type type, float value) {
