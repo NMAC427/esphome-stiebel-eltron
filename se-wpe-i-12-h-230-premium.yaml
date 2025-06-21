@@ -34,6 +34,15 @@ sensor:
     target: HK1
 
   - platform: stiebel_eltron_can
+    name: "WW Hysterese"
+    unit_of_measurement: "K"
+    device_class: "temperature"
+    elster_index: 0x4f25
+    elster_type: dec
+    target: KESSEL
+    update_interval: 5min
+
+  - platform: stiebel_eltron_can
     name: "Verdichter Starts"
     icon: "mdi:counter"
     state_class: total_increasing
@@ -51,7 +60,7 @@ sensor:
     elster_index: 0x092c
     elster_type: double
     target: MANAGER
-    update_interval: 5min
+    update_interval: 1h
 
   - platform: stiebel_eltron_can
     name: "Wärmeertrag Heizung"
@@ -62,7 +71,7 @@ sensor:
     elster_index: 0x0930
     elster_type: double
     target: MANAGER
-    update_interval: 5min
+    update_interval: 1h
 
   - platform: stiebel_eltron_can
     name: "Leistungsaufnahme Heizung"
@@ -73,7 +82,7 @@ sensor:
     elster_index: 0x0920
     elster_type: double
     target: MANAGER
-    update_interval: 5min
+    update_interval: 1h
 
   - platform: stiebel_eltron_can
     name: "Leistungsaufnahme WW"
@@ -84,7 +93,7 @@ sensor:
     elster_index: 0x091c
     elster_type: double
     target: MANAGER
-    update_interval: 5min
+    update_interval: 1h
 
 number:
   - platform: stiebel_eltron_can
@@ -141,17 +150,6 @@ number:
     target: WWTEMP
     min_value: 10
     max_value: 60
-    update_interval: 5min
-
-  - platform: stiebel_eltron_can
-    name: "WW Hysterese"
-    unit_of_measurement: "K"
-    device_class: "temperature"
-    elster_index: 0x4f25
-    elster_type: dec
-    target: KESSEL
-    min_value: 1
-    max_value: 15
     update_interval: 5min
 
   # Internal entities:
