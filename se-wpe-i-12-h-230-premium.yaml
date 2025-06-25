@@ -95,6 +95,42 @@ sensor:
     target: MANAGER
     update_interval: 1h
 
+  - platform: stiebel_eltron_can
+    name: "Erdsonde Rücklauftemperatur"
+    icon: "mdi:thermometer-chevron-down"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    elster_index: 0x4fa6
+    elster_type: dec
+    target: MANAGER
+
+  - platform: stiebel_eltron_can
+    name: "Erdsonde Vorlauftemperatur"
+    icon: "mdi:thermometer-chevron-up"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    elster_index: 0x4fa7
+    elster_type: dec
+    target: MANAGER
+
+  - platform: stiebel_eltron_can
+    name: "WP Rücklauftemperatur"
+    icon: "mdi:thermometer-chevron-down"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    elster_index: 0x0016
+    elster_type: dec
+    target: MANAGER
+
+  - platform: stiebel_eltron_can
+    name: "WP Vorlauftemperatur"
+    icon: "mdi:thermometer-chevron-up"
+    unit_of_measurement: "°C"
+    device_class: temperature
+    elster_index: 0x01d6
+    elster_type: dec
+    target: MANAGER
+
 number:
   - platform: stiebel_eltron_can
     name: "HK1 Komfort Temperatur"
