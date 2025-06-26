@@ -1,0 +1,151 @@
+# This package provides an SG Ready emulation.
+#
+# When the "SG Ready" switch is on, the internal HK1 Komfort and WW Komfort temperature
+# setpoints used by the heat pump get increased by the specified delta amount, without
+# updating the setpoints shown in the UI.
+
+script:
+  - id: update_heatpump_setpoints
+    mode: single
+    parameters:
+      hk1_setpoint: float
+      ww_setpoint: float
+    then:
+      - lambda: |-
+          // -- HK1 --
+          if (hk1_setpoint <= 0) {
+            if (!id(hk1_komfort_temp).has_state() || isnan(id(hk1_komfort_temp).state)) return;
+            hk1_setpoint = id(hk1_komfort_temp_base).state;
+          }
+          if (id(sg_ready).state) {
+            hk1_setpoint += id(hk1_sg_ready_delta).state;
+          }
+          id(hk1_komfort_temp).control(hk1_setpoint);
+
+          // -- WW --
+          if (ww_setpoint <= 0) {
+            if (!id(ww_komfort_temp).has_state() || isnan(id(ww_komfort_temp).state)) return;
+            ww_setpoint = id(ww_komfort_temp_base).state;
+          }
+          if (id(sg_ready).state) {
+            ww_setpoint += id(ww_sg_ready_delta).state;
+          }
+          id(ww_komfort_temp).control(ww_setpoint);
+
+switch:
+  - platform: template
+    name: "SG Ready"
+    id: sg_ready
+    icon: "mdi:solar-power"
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: true
+    on_turn_on:
+      - script.execute:
+          id: update_heatpump_setpoints
+          hk1_setpoint: -1
+          ww_setpoint: -1
+    on_turn_off:
+      - script.execute:
+          id: update_heatpump_setpoints
+          hk1_setpoint: -1
+          ww_setpoint: -1
+
+number:
+  # -- HK1 --
+  - id: !extend hk1_komfort_temp
+    name: "HK1 Komfort Temperatur [INTERNAL]"
+    disabled_by_default: true
+    on_value:
+      then:
+        - lambda: |-
+            if (id(sg_ready).state) {
+              id(hk1_komfort_temp_base).publish_state(x - id(hk1_sg_ready_delta).state);
+            } else {
+              id(hk1_komfort_temp_base).publish_state(x);
+            }
+
+  - platform: template
+    name: "HK1 Komfort Temperatur"
+    id: hk1_komfort_temp_base
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    min_value: 5
+    max_value: 30
+    step: 0.1
+    optimistic: false
+    set_action:
+      - lambda: |-
+          id(update_heatpump_setpoints)->execute(x, -1);
+
+  - platform: template
+    name: "HK1 SG Ready Delta"
+    id: hk1_sg_ready_delta
+    icon: "mdi:thermometer-plus"
+    unit_of_measurement: "K"
+    min_value: 0
+    max_value: 5
+    step: 0.1
+    optimistic: true
+    restore_value: true
+    initial_value: 2.0
+    set_action:
+      - script.execute:
+          id: update_heatpump_setpoints
+          hk1_setpoint: -1
+          ww_setpoint: -1
+
+  # -- WW --
+  - id: !extend ww_komfort_temp
+    name: "WW Komfort Temperatur [INTERNAL]"
+    disabled_by_default: true
+    on_value:
+      then:
+        - lambda: |-
+            if (id(sg_ready).state) {
+              id(ww_komfort_temp_base).publish_state(x - id(ww_sg_ready_delta).state);
+            } else {
+              id(ww_komfort_temp_base).publish_state(x);
+            }
+
+  - platform: template
+    name: "WW Komfort Temperatur"
+    id: ww_komfort_temp_base
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    min_value: 10
+    max_value: 60
+    step: 0.1
+    optimistic: false
+    set_action:
+      - lambda: |-
+          id(update_heatpump_setpoints)->execute(-1, x);
+
+  - platform: template
+    name: "WW SG Ready Delta"
+    id: ww_sg_ready_delta
+    icon: "mdi:thermometer-plus"
+    unit_of_measurement: "K"
+    min_value: 0
+    max_value: 5
+    step: 0.1
+    optimistic: true
+    restore_value: true
+    initial_value: 2.0
+    set_action:
+      - script.execute:
+          id: update_heatpump_setpoints
+          hk1_setpoint: -1
+          ww_setpoint: -1
+
+# To prevent SG-Ready from being on permanently,
+# turn it off every day at midnight.
+time:
+  - platform: sntp
+    id: sntp_time
+    on_time:
+      - seconds: 0
+        minutes: 0
+        hours: 0
+        then:
+          - logger.log: "Daily reset: Turning off SG Ready."
+          - switch.turn_off: sg_ready

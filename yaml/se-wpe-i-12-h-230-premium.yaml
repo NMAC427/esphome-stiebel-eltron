@@ -134,6 +134,7 @@ sensor:
 number:
   - platform: stiebel_eltron_can
     name: "HK1 Komfort Temperatur"
+    id: hk1_komfort_temp
     unit_of_measurement: "°C"
     device_class: "temperature"
     elster_index: 0x4eb8
@@ -168,6 +169,7 @@ number:
 
   - platform: stiebel_eltron_can
     name: "WW Komfort Temperatur"
+    id: ww_komfort_temp
     unit_of_measurement: "°C"
     device_class: "temperature"
     elster_index: 0x0013

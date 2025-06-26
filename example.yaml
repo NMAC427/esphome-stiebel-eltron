@@ -67,4 +67,5 @@ stiebel_eltron_can:
   status_led: status_led_light
 
 packages:
-  - !include ./se-wpe-i-12-h-230-premium.yaml
+  - !include ./yaml/se-wpe-i-12-h-230-premium.yaml
+  - !include ./yaml/sg-ready.yaml
