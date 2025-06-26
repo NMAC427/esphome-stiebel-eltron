@@ -257,6 +257,7 @@ switch:
     name: "HK1 Kühlen"
     id: hk1_kuehlen
     icon: "mdi:snowflake"
+    restore_mode: DISABLED
     turn_off_action:
     - lambda: |-
         id(hk1_kuehlen_raw).control(0);
