@@ -308,7 +308,7 @@ void StiebelEltronCanNumber::setup() {
   case et_triple_val:
   case et_inv_double_val:
   case et_inv_triple_val:
-    this->mark_failed("Combined entities (double / triple) are not supported.");
+    this->mark_failed(LOG_STR("Combined entities (double / triple) are not supported."));
     break;
 
   case et_default:
