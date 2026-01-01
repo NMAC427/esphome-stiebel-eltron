@@ -122,11 +122,11 @@ void StiebelEltronCanComponent::blink_status_led() {
 uint16_t encode_elster_data(Type type, float value) {
   switch (type) {
     case et_dec_val:
-      return (uint16_t) round(value * 10);
+      return (uint16_t) ((int16_t) round(value * 10));
     case et_cent_val:
-      return (uint16_t) round(value * 100);
+      return (uint16_t) ((int16_t) round(value * 100));
     case et_mil_val:
-      return (uint16_t) round(value * 1000);
+      return (uint16_t) ((int16_t) round(value * 1000));
     case et_little_endian: {
       uint16_t s = (uint16_t) value;
       return (s >> 8) + 256 * (s & 0xff);
@@ -138,13 +138,15 @@ uint16_t encode_elster_data(Type type, float value) {
 }
 
 float decode_elster_data(Type type, uint16_t data) {
+  int16_t signed_data = (int16_t) data;
+
   switch (type) {
     case et_dec_val:
-      return (float) data / 10.0;
+      return (float) signed_data / 10.0;
     case et_cent_val:
-      return (float) data / 100.0;
+      return (float) signed_data / 100.0;
     case et_mil_val:
-      return (float) data / 1000.0;
+      return (float) signed_data / 1000.0;
     case et_little_endian:
       return (float) ((data >> 8) + 256 * (data & 0xff));
     case et_default:
