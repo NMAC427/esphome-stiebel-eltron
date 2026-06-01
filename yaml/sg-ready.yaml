@@ -1,8 +1,30 @@
 # This package provides an SG Ready emulation.
 #
-# When the "SG Ready" switch is on, the internal HK1 Komfort and WW Komfort temperature
-# setpoints used by the heat pump get increased by the specified delta amount, without
-# updating the setpoints shown in the UI.
+# When the "SG Ready" switch is on, the internal HK1 Komfort, WW Komfort,
+# and KH1 Kühl temperature setpoints used by the heat pump get adjusted by
+# the specified delta amount, without updating the setpoints shown in the UI.
+
+sensor:
+  - platform: template
+    name: "HK1 Komfort Temperatur (Ist-Wert)"
+    id: hk1_komfort_temp_actual
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    disabled_by_default: true
+
+  - platform: template
+    name: "WW Komfort Temperatur (Ist-Wert)"
+    id: ww_komfort_temp_actual
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    disabled_by_default: true
+
+  - platform: template
+    name: "KH1 Kühl Temperatur (Ist-Wert)"
+    id: hk1_kuehl_temp_actual
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    disabled_by_default: true
 
 script:
   - id: update_heatpump_setpoints
@@ -10,6 +32,7 @@ script:
     parameters:
       hk1_setpoint: float
       ww_setpoint: float
+      hk1_kuehl_setpoint: float
     then:
       - lambda: |-
           // -- HK1 --
@@ -32,6 +55,16 @@ script:
           }
           id(ww_komfort_temp).control(ww_setpoint);
 
+          // -- HK1 Kühl --
+          if (hk1_kuehl_setpoint <= 0) {
+            if (!id(hk1_kuehl_temp).has_state() || isnan(id(hk1_kuehl_temp).state)) return;
+            hk1_kuehl_setpoint = id(hk1_kuehl_temp_base).state;
+          }
+          if (id(sg_ready).state) {
+            hk1_kuehl_setpoint += id(hk1_kuehl_sg_ready_delta).state;
+          }
+          id(hk1_kuehl_temp).control(hk1_kuehl_setpoint);
+
 switch:
   - platform: template
     name: "SG Ready"
@@ -44,11 +77,13 @@ switch:
           id: update_heatpump_setpoints
           hk1_setpoint: -1
           ww_setpoint: -1
+          hk1_kuehl_setpoint: -1
     on_turn_off:
       - script.execute:
           id: update_heatpump_setpoints
           hk1_setpoint: -1
           ww_setpoint: -1
+          hk1_kuehl_setpoint: -1
 
 number:
   # -- HK1 --
@@ -58,6 +93,7 @@ number:
     on_value:
       then:
         - lambda: |-
+            id(hk1_komfort_temp_actual).publish_state(x);
             if (id(sg_ready).state) {
               id(hk1_komfort_temp_base).publish_state(x - id(hk1_sg_ready_delta).state);
             } else {
@@ -75,10 +111,10 @@ number:
     optimistic: false
     set_action:
       - lambda: |-
-          id(update_heatpump_setpoints)->execute(x, -1);
+          id(update_heatpump_setpoints)->execute(x, -1, -1);
 
   - platform: template
-    name: "HK1 SG Ready Delta"
+    name: "HK1 Komfort Delta (SG Ready)"
     id: hk1_sg_ready_delta
     icon: "mdi:thermometer-plus"
     unit_of_measurement: "K"
@@ -93,6 +129,7 @@ number:
           id: update_heatpump_setpoints
           hk1_setpoint: -1
           ww_setpoint: -1
+          hk1_kuehl_setpoint: -1
 
   # -- WW --
   - id: !extend ww_komfort_temp
@@ -101,6 +138,7 @@ number:
     on_value:
       then:
         - lambda: |-
+            id(ww_komfort_temp_actual).publish_state(x);
             if (id(sg_ready).state) {
               id(ww_komfort_temp_base).publish_state(x - id(ww_sg_ready_delta).state);
             } else {
@@ -118,10 +156,10 @@ number:
     optimistic: false
     set_action:
       - lambda: |-
-          id(update_heatpump_setpoints)->execute(-1, x);
+          id(update_heatpump_setpoints)->execute(-1, x, -1);
 
   - platform: template
-    name: "WW SG Ready Delta"
+    name: "WW Komfort Delta (SG Ready)"
     id: ww_sg_ready_delta
     icon: "mdi:thermometer-plus"
     unit_of_measurement: "K"
@@ -136,6 +174,52 @@ number:
           id: update_heatpump_setpoints
           hk1_setpoint: -1
           ww_setpoint: -1
+          hk1_kuehl_setpoint: -1
+
+  # -- HK1 Kühl --
+  - id: !extend hk1_kuehl_temp
+    name: "HK1 Kühl Temperatur [INTERNAL]"
+    disabled_by_default: true
+    on_value:
+      then:
+        - lambda: |-
+            id(hk1_kuehl_temp_actual).publish_state(x);
+            if (id(sg_ready).state) {
+              id(hk1_kuehl_temp_base).publish_state(x - id(hk1_kuehl_sg_ready_delta).state);
+            } else {
+              id(hk1_kuehl_temp_base).publish_state(x);
+            }
+
+  - platform: template
+    name: "HK1 Kühl Temperatur"
+    id: hk1_kuehl_temp_base
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    min_value: 20
+    max_value: 30
+    step: 0.1
+    optimistic: false
+    set_action:
+      - lambda: |-
+          id(update_heatpump_setpoints)->execute(-1, -1, x);
+
+  - platform: template
+    name: "HK1 Kühl Delta (SG Ready)"
+    id: hk1_kuehl_sg_ready_delta
+    icon: "mdi:thermometer-minus"
+    unit_of_measurement: "K"
+    min_value: -5
+    max_value: 0
+    step: 0.1
+    optimistic: true
+    restore_value: true
+    initial_value: -2.0
+    set_action:
+      - script.execute:
+          id: update_heatpump_setpoints
+          hk1_setpoint: -1
+          ww_setpoint: -1
+          hk1_kuehl_setpoint: -1
 
 # To prevent SG-Ready from being on permanently,
 # turn it off every day at midnight.

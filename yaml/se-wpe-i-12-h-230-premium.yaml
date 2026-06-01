@@ -156,7 +156,8 @@ number:
     update_interval: 5min
 
   - platform: stiebel_eltron_can
-    name: "KH1 Kühl Temperatur"
+    name: "HK1 Kühl Temperatur"
+    id: hk1_kuehl_temp
     icon: "mdi:snowflake-thermometer"
     unit_of_measurement: "°C"
     device_class: "temperature"
